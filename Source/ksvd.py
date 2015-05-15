@@ -1,12 +1,12 @@
 #coding:utf8
 
 """Implements K-SVD algorithm through a KSVD class.
-For details about teh ideas behind the implementation,
+For details about the ideas behind the implementation,
 see:
-    - Efficient implementation of the K-SVD algorithm
+    [1] Efficient implementation of the K-SVD algorithm
       and Batch-OMP Method by Rubinstein, 
       Zibulevsky and Elad
-    - K-SVD: an algorithm for designing of overcomplete
+    [2] K-SVD: an algorithm for designing of overcomplete
       dictionaries for sparse representation by Aharon,
       Elad, Bruckstein and Katz
 
@@ -18,8 +18,10 @@ import numpy as np
 from sklearn.linear_model import orthogonal_mp
 
 class KSVD:
+    """Implement K-SVD algorithm, more or less using
+    scikit-learn method conventions"""
 
-    def __init__(self, D, K = None, n_iter = 200):
+    def __init__(self, D, K = None, n_iter = 200, precompute = True):
         """Initialization method. Args:
         - D: tuple of ints -> dimension of intial 
              dictionary
@@ -29,12 +31,17 @@ class KSVD:
           K will be fixed to 10% of signals present in 
           intial dictionary D
         - n_iter: (int) number of iterations for
-          OMP algorithm"""
+          OMP algorithm
+        - precompute: if True use Batch OMP algorithm.
+          Else, use standard OMP algorithm
+        """
 
         #Set initial dictionary
         if type(D) == tuple:
             #TODO: what is best initial dictionary?
-            #Columns have to be normalized...
+            #Maybe we should rather take the first
+            #self.D.shape[1] columns from X matrix
+            #just before starting to fit the model...
             D = self.init_dic(D[0], D[1])
         self.D = D
 
@@ -45,15 +52,21 @@ class KSVD:
 
         #Set number of iterations
         self.n_iter = n_iter
+        #Decide wether to use or not Batch OMP
+        self.precompute = precompute
 
     def init_dic(self, n_features, n_samples):
         """Return a not so bad dictionary of dimension:
         (n_features, n_samples).
+        It is an entirely random dictionary.
         """
         D = np.zeros((n_features, n_samples))
+        #A mask of the coordinates of the values
+        #of D that are not equal to 0
         mask = np.random.randint(low = 0, high = n_samples,
                 size = n_features)
-
+        
+        #Set corresponding values of D to 1
         #TODO: make this faster
         for i in range(len(mask)):
             D[i, mask[i]] = 1
@@ -79,11 +92,20 @@ class KSVD:
 
         return I
 
+    def worst_represented(self, gamma, X):
+        """Returns X columns with the worst representation
+        in gamma for self.D dictionary"""
+        X_ = self.D.dot(gamma)
+        errors = np.abs(X - X_).sum(axis = 0)
+        return X[:,errors.argmax()]
+
     def fit(self, X):
         """Actual implementation of K-SVD algorithm.
         Args:
         - X: numpy 2d-array of dimensions :
           (len(signal) = D.shape[0], n_samples)
+        TODO: add a stopping condition like an epsilon
+        (and return corresponding number of iterations
         """
 
         #Check wether data is coherent
@@ -99,35 +121,56 @@ class KSVD:
 
             #Step 1: Compute sparse representation of X
             #given current dictionary D
-            gamma = orthogonal_mp(self.D, X, n_nonzero_coefs = self.K)
-
+            gamma = orthogonal_mp(self.D, X, n_nonzero_coefs = self.K,
+                            precompute = self.precompute)
             #Step 2: Adjust dictionary D and sparse
             #representation gamma at the same time
             #column by column
             for j in range(self.D.shape[1]):
                 
-                #Set D_j to zero
-                self.D[:,j] = np.zeros_like(self.D[:,j])
-
                 #Compute I = {indices of the signals in X
                 #whose representations use jth column of D
                 I = self.find_indices(gamma, j)
+                
+                #If one column is not used, it won't be until 
+                #the algorithm actually stops, which is a shame
+                #So, we use heuristics: we set teh values of the
+                #column to the worst represented columns of
+                #X matrix
+                if I == []:
+                    #find worst represented column in X
+                    d = self.worst_represented(gamma, X)
+                    #normalize
+                    d = d/np.linalg.norm(d)
+                    #set D column to d
+                    self.D[:,j] = d
+                    #jump to the next iteration
+                    continue
+
+                #Set D_j to zero
+                self.D[:,j] = np.zeros_like(self.D[:,j])
 
                 #From now, we use a certain number of tricks
                 #explained in [1] to accelerate the (therefore
                 #approximate) K-SVD algorithm
-                #TODO: try to understand better...
+                #TODO: try to understand better... -> maybe we could
+                #solve the equations in the report ;)
                 g = gamma[j,:][I].T
                 d = X[:,I].dot(g) - self.D.dot(gamma[:,I].dot(g))
                 if d.sum() != 0:
                     d = d/np.linalg.norm(d)
-                else:
-                    print "sum = 0 for col n°{}".format(j)
                 g = (X[:,I].T).dot(d) - ((self.D.dot(gamma[:,I])).T).dot(d)
 
                 #Store new values
                 self.D[:,j] = d
                 gamma[j,:][I] = g.T
 
-        return gamma
+    def sparse_rep(self, X):
+        """Return sparse representation of column vectors
+        present in X, according to current self.D dictionary.
+        We use batch OMP algorithm to find the representation"""
+        return orthogonal_mp(self.D, X, n_nonzero_coefs = self.K,
+                precompute = self.precompute)
+
+
 

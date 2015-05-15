@@ -37,26 +37,26 @@ for i in range(len(shapes)):
 #################### RANDOM IMAGES #######################
 
 def generate_img(i):
-    """Generates combination of i shapes from D dictionnary"""
+    """Generates combination of at most i shapes from D dictionnary"""
     output = np.zeros(100)
     for _ in range(i):
         output += D[:,random.randint(0, len(shapes)-1)]
     return output
 
 X = []
-#for _ in range(20):
-#        X.append(generate_img(2))
-for _ in range(20):
+for _ in range(30):
+        X.append(generate_img(2))
+for _ in range(30):
         X.append(generate_img(1))
 
 X = np.array(X).T
 
 ####################### TEST KSVD #########################
 
-model = ksvd.KSVD(X[:,0:4], K = 1)
+model = ksvd.KSVD((100, 4), K = 2)
 model.fit(X)
 
-gamma = orthogonal_mp(model.D, X, n_nonzero_coefs = 2)
+gamma = model.sparse_rep(X)
 
 plt.subplot(2, 2, 1)
 plt.imshow(model.D[:,0].reshape((10,10)), cmap = 'gray')
