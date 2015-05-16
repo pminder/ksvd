@@ -60,19 +60,20 @@ class KSVD:
         (n_features, n_samples).
         It is an entirely random dictionary.
         """
-        D = np.zeros((n_features, n_samples))
+        D = np.random.randint(low = 0, high = 2,
+                size = (n_features, n_samples))
         #A mask of the coordinates of the values
         #of D that are not equal to 0
-        mask = np.random.randint(low = 0, high = n_samples,
-                size = n_features)
+        #mask = np.random.randint(low = 0, high = n_samples,
+        #        size = n_features)
         
         #Set corresponding values of D to 1
         #TODO: make this faster
-        for i in range(len(mask)):
-            D[i, mask[i]] = 1
+        #for i in range(len(mask)):
+        #    D[i, mask[i]] = 1
 
         #Normalize dict columns
-        D = D/D.sum(axis = 0)
+        D = D.astype('float')/D.sum(axis = 0)
 
         return D
 
