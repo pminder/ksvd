@@ -19,7 +19,7 @@ class's methods.
 
 import numpy as np
 from sklearn.linear_model import orthogonal_mp
-import progressbar
+from ipy_progressbar import ProgressBar
 
 class KSVD:
     """Implement K-SVD algorithm, more or less using
@@ -113,11 +113,10 @@ class KSVD:
 
         #ProgressBar setup
         print "Training dictionary over {} iterations".format(self.n_iter)
-        progress = progressbar.AnimatedProgressBar(end = self.n_iter,
-                width = 50)
+        progress = ProgressBar(self.n_iter)
 
         #self.n_iter iterations
-        for it in range(self.n_iter):
+        for it in progress:
 
             #Step 1: Compute sparse representation of X
             #given current dictionary D
@@ -165,12 +164,6 @@ class KSVD:
                 self.D[:,j] = d
                 gamma[j,:][I] = g.T
 
-            #Update progress bar
-            progress += 1
-            progress.show_progress()
-
-        print "   Done!"
-
     def sparse_rep(self, X):
         """Return sparse representation of column vectors
         present in X, according to current self.D dictionary.
@@ -178,5 +171,3 @@ class KSVD:
         return orthogonal_mp(self.D, X, n_nonzero_coefs = self.K,
                 precompute = self.precompute)
 
-
-        #TODO: ajouter une barre de chargement
