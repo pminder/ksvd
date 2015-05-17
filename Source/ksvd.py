@@ -19,6 +19,7 @@ class's methods.
 
 import numpy as np
 from sklearn.linear_model import orthogonal_mp
+from sklearn.linear_model import OrthogonalMatchingPursuit
 from ipy_progressbar import ProgressBar
 
 class KSVD:
@@ -122,6 +123,7 @@ class KSVD:
             #given current dictionary D
             gamma = orthogonal_mp(self.D, X, n_nonzero_coefs = self.K,
                             precompute = self.precompute)
+
             #Step 2: Adjust dictionary D and sparse
             #representation gamma at the same time
             #column by column

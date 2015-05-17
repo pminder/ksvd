@@ -44,16 +44,14 @@ def generate_img(i):
     return output
 
 X = []
-for _ in range(30):
+for _ in range(5000):
         X.append(generate_img(2))
-for _ in range(30):
-        X.append(generate_img(1))
 
 X = np.array(X).T
 
 ####################### TEST KSVD #########################
 
-model = ksvd.KSVD((100, 4), K = 2)
+model = ksvd.KSVD((100, 4), K = 2, precompute = True)
 model.fit(X)
 
 gamma = model.sparse_rep(X)
