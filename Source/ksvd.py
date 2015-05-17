@@ -1,5 +1,8 @@
 #coding:utf8
 
+import warnings
+warnings.filterwarnings("ignore")
+
 """Implements K-SVD algorithm through a KSVD class.
 For details about the ideas behind the implementation,
 see:
@@ -16,6 +19,7 @@ class's methods.
 
 import numpy as np
 from sklearn.linear_model import orthogonal_mp
+import progressbar
 
 class KSVD:
     """Implement K-SVD algorithm, more or less using
@@ -62,15 +66,6 @@ class KSVD:
         """
         D = np.random.randint(low = 0, high = 2,
                 size = (n_features, n_samples))
-        #A mask of the coordinates of the values
-        #of D that are not equal to 0
-        #mask = np.random.randint(low = 0, high = n_samples,
-        #        size = n_features)
-        
-        #Set corresponding values of D to 1
-        #TODO: make this faster
-        #for i in range(len(mask)):
-        #    D[i, mask[i]] = 1
 
         #Normalize dict columns
         D = D.astype('float')/D.sum(axis = 0)
@@ -116,9 +111,13 @@ class KSVD:
             "should have same number of lines for "
             "both the dictionary and the input data ")
 
+        #ProgressBar setup
+        print "Training dictionary over {} iterations".format(self.n_iter)
+        progress = progressbar.AnimatedProgressBar(end = self.n_iter,
+                width = 50)
 
         #self.n_iter iterations
-        for _ in range(self.n_iter):
+        for it in range(self.n_iter):
 
             #Step 1: Compute sparse representation of X
             #given current dictionary D
@@ -145,7 +144,7 @@ class KSVD:
                     d = d/np.linalg.norm(d)
                     #set D column to d
                     self.D[:,j] = d
-                    #jump to the next iteration
+                    #jump to the next column optimization
                     continue
 
                 #Set D_j to zero
@@ -166,6 +165,12 @@ class KSVD:
                 self.D[:,j] = d
                 gamma[j,:][I] = g.T
 
+            #Update progress bar
+            progress += 1
+            progress.show_progress()
+
+        print "   Done!"
+
     def sparse_rep(self, X):
         """Return sparse representation of column vectors
         present in X, according to current self.D dictionary.
@@ -174,4 +179,4 @@ class KSVD:
                 precompute = self.precompute)
 
 
-
+        #TODO: ajouter une barre de chargement
