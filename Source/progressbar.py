@@ -77,6 +77,10 @@ def replace_at(str, new, start, stop):
 def consoleprint(s):
     if sys.platform.lower().startswith('win'):
         print(s, '\r', end='')
+    #This my personal modification :)
+    if sys.platform.lower().startswith('lin'):
+            sys.stdout.write(s+'\r')
+            sys.stdout.flush()
     else:
         print(s)
 
