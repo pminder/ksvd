@@ -3,7 +3,8 @@
 """Run very simple tests for ksvd algorithm"""
 
 import random
-import ksvd
+import imp
+ksvd = imp.load_source('ksvd', '../Source/ksvd.py')
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import orthogonal_mp
