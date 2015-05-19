@@ -1,5 +1,6 @@
 #coding:utf8
 
+#TODO: remove that
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -19,7 +20,6 @@ class's methods.
 
 import numpy as np
 from sklearn.linear_model import orthogonal_mp
-from sklearn.linear_model import OrthogonalMatchingPursuit
 import progressbar
 
 class KSVD:
@@ -166,7 +166,7 @@ class KSVD:
                 self.D[:,j] = d
                 gamma[j,:][I] = g.T
 
-            #Update prohgress bar
+            #Update progress bar
             progress.update(it)
 
         print('   Done!')
@@ -177,4 +177,46 @@ class KSVD:
         We use batch OMP algorithm to find the representation"""
         return orthogonal_mp(self.D, X, n_nonzero_coefs = self.K,
                 precompute = self.precompute)
+
+    def denoise_patches(self, X, tol):
+        """Return denoised patches in X using the following
+        method:
+        - temporarily remove lines of self.D corresponding
+        to missing pixels in each patches (ie colums on X)
+        - compute sparse representation of remaining pixels
+        using new dictionary
+        - return new patch = self.D.dot(gamma) [where slef.D
+        is real unmodified dictionary
+
+        Args:
+        - X: patches organized as columns of a matrix
+        - tol : maximum norm of the residual
+        TODO: set a default value
+        """
+
+        #Check X dimensions
+        if X.shape[0] != self.D.shape[0]:
+            raise ValueError("X.shape[0] must be equal to "
+                    "{}!".format(X.shape[0]))
+        
+        #Initialize output
+        output = np.zeros_like(X.shape)
+
+        #for each column (ie patch) in X
+        for j in range(X.shape[0]):
+            patch = X[:,j]
+            
+            #Adapt dictionary self.D to current patch
+            tempD = self.D.copy()
+            tempD[patch == 0] = np.zeros(self.D.shape[1])
+            #normalize tempD columns
+            tempD = tempD/np.linalg.norm(tempD, axis = 0)
+
+            #Compute sparse representation
+            gamma = orthogonal_mp(tempD, patch, tol = tol)
+            #Store resulting patch
+            output[:,j] = self.D.dot(gamma)
+
+        return output
+
 
