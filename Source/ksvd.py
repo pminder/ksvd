@@ -200,11 +200,11 @@ class KSVD:
                     "{}!".format(X.shape[0]))
         
         #Initialize output
-        output = np.zeros_like(X.shape)
+        output = np.zeros_like(X)
 
         #for each column (ie patch) in X
-        for j in range(X.shape[0]):
-            patch = X[:,j]
+        for j in range(X.shape[1]):
+            patch = X[:,j].ravel()
             
             #Adapt dictionary self.D to current patch
             tempD = self.D.copy()
@@ -213,10 +213,8 @@ class KSVD:
             tempD = tempD/np.linalg.norm(tempD, axis = 0)
 
             #Compute sparse representation
-            gamma = orthogonal_mp(tempD, patch, tol = tol)
+            gamma = orthogonal_mp(tempD, X[:,j])
             #Store resulting patch
             output[:,j] = self.D.dot(gamma)
 
         return output
-
-
